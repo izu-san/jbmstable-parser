@@ -157,7 +157,7 @@ public abstract class BMSTable<T> {
 
 	public Map<String, String> getAttrmap() {
 		if(values.containsKey(ATTR)) {
-			return (Map<String, String>) values.get(ATTR);
+			return stringMap(values.get(ATTR));
 		}
 		return new HashMap<String, String>();
 	}
@@ -209,5 +209,10 @@ public abstract class BMSTable<T> {
 
 	public void setMode(String mode) {
 		values.put(MODE, mode);
+	}
+
+	@SuppressWarnings("unchecked")
+	private Map<String, String> stringMap(Object value) {
+		return (Map<String, String>) value;
 	}
 }

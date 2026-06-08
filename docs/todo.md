@@ -9,6 +9,7 @@ Completed in this workspace.
 - Jackson is externalized as a normal Gradle dependency.
 - Tests pass with Jackson `2.9.6` and `2.20.1`.
 - Gradle wrapper/build, README, migration notes, license status notes, release/checksum tasks, and verification notes are present.
+- The source-built artifact now targets Java 25 bytecode.
 
 See:
 

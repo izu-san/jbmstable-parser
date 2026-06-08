@@ -102,7 +102,7 @@ public abstract class BMSTableElement {
 			return result;
 		}
 		if(o instanceof List) {
-			return (List<String>) o;
+			return stringList(o);
 		}
 		return null;
 	}
@@ -122,5 +122,10 @@ public abstract class BMSTableElement {
 	public void setValues(Map<String, Object> values) {
 		this.values.clear();
 		this.values.putAll(values);
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<String> stringList(Object value) {
+		return (List<String>) value;
 	}
 }

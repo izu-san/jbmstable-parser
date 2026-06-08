@@ -34,10 +34,8 @@ public class DifficultyTable extends BMSTable<DifficultyTableElement> implements
 
 	public DifficultyTableElement[] getElements() {
 		DifficultyTableElement[] dte = this.getModels().toArray(new DifficultyTableElement[0]);
-		Comparator asc = new Comparator() {
-			public int compare(Object o1, Object o2) {
-				DifficultyTableElement dte1 = (DifficultyTableElement) o1;
-				DifficultyTableElement dte2 = (DifficultyTableElement) o2;
+		Comparator<DifficultyTableElement> asc = new Comparator<DifficultyTableElement>() {
+			public int compare(DifficultyTableElement dte1, DifficultyTableElement dte2) {
 				int c = indexOf(dte1.getLevel()) - indexOf(dte2.getLevel());
 				if (c == 0) {
 					return dte1.getTitle().compareToIgnoreCase(dte2.getTitle());
@@ -59,7 +57,7 @@ public class DifficultyTable extends BMSTable<DifficultyTableElement> implements
 	}
 
 	public String[] getLevelDescription() {
-		List l = (List) this.getValues().get(LEVEL_ORDER);
+		List<?> l = (List<?>) this.getValues().get(LEVEL_ORDER);
 		if (l != null) {
 			String[] levels = new String[l.size()];
 			for (int i = 0; i < levels.length; i++) {

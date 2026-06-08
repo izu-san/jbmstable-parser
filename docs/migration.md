@@ -7,9 +7,9 @@ This repository now builds `bms.table` classes from source with Jackson as a nor
 - Source package remains `bms.table`.
 - Default dependency set keeps Jackson at `2.9.6` to reproduce the vendored beatoraja jar behavior first.
 - The produced parser jar is non-shaded. Consumers must provide Jackson on the runtime classpath.
-- Java compilation currently uses a Java 25 toolchain with `--release 8` to preserve Java 8 bytecode compatibility with the vendored jar unless a future migration decides otherwise.
+- Java compilation currently uses a Java 25 toolchain with `--release 25`. The source-built artifact requires Java 25 at runtime.
 - Generated `bms.table` public API has been compared against `F:\Java\Beatoraja\lib\jbmstable-parser.jar` and matches.
-- Generated `DifficultyTableParser.class` is Java 8 bytecode, major version `52`.
+- Generated `DifficultyTableParser.class` is Java 25 bytecode, major version `69`.
 
 ## beatoraja impact
 
@@ -24,8 +24,9 @@ Gradle consumers can depend on this project artifact and let `jackson-databind` 
 For beatoraja, the practical migration is:
 
 1. Replace the vendored shaded parser jar with the source-built parser artifact.
-2. Add Jackson to beatoraja's build/runtime dependencies.
-3. Prefer beatoraja's current Jackson target, `2.20.1`, after running the parser test suite with `-PjacksonVersion=2.20.1`.
+2. Ensure beatoraja is built and run on Java 25.
+3. Add Jackson to beatoraja's build/runtime dependencies.
+4. Prefer beatoraja's current Jackson target, `2.20.1`, after running the parser test suite with `-PjacksonVersion=2.20.1`.
 
 ## Jackson upgrade check
 

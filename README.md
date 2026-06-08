@@ -21,7 +21,7 @@ To test with another Jackson version:
 
 ## Java target
 
-The build uses a Java 25 toolchain and compiles with `--release 8`. This preserves Java 8 bytecode compatibility with beatoraja's current vendored `lib/jbmstable-parser.jar` while still verifying the source with a modern JDK.
+The build uses a Java 25 toolchain and compiles with `--release 25`. The source-built artifact therefore targets Java 25 bytecode. This intentionally does not preserve Java 8 bytecode compatibility with beatoraja's current vendored `lib/jbmstable-parser.jar`.
 
 ## Jackson dependency policy
 

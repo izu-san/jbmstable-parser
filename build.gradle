@@ -28,7 +28,7 @@ sourceSets {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.release = 8
+    options.release = 25
     options.encoding = 'UTF-8'
     options.compilerArgs += ['-Xlint:unchecked']
 }
@@ -104,11 +104,16 @@ tasks.register('comparePublicApi') {
 
 void writePublicApiReport(File jarPath, File output) {
     def jar = new java.util.jar.JarFile(jarPath)
-    def classNames = jar.entries().collect { it.name }
-            .findAll { it.startsWith('bms/table/') && it.endsWith('.class') }
-            .findAll { !it.matches('.+\\$[0-9]+\\.class') }
-            .collect { it.replace('/', '.').replace('.class', '') }
-            .sort()
+    def classNames
+    try {
+        classNames = jar.entries().collect { it.name }
+                .findAll { it.startsWith('bms/table/') && it.endsWith('.class') }
+                .findAll { !it.matches('.+\\$[0-9]+\\.class') }
+                .collect { it.replace('/', '.').replace('.class', '') }
+                .sort()
+    } finally {
+        jar.close()
+    }
     output.parentFile.mkdirs()
     output.text = ''
     classNames.each { className ->
