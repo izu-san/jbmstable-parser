@@ -1,8 +1,5 @@
 package bms.table;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-
 public class Course {
 
 	/**

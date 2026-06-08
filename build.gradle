@@ -1,0 +1,131 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.github.exch-bms2'
+version = '0.1.0-SNAPSHOT'
+
+def jacksonVersion = providers.gradleProperty('jacksonVersion').orElse('2.9.6').get()
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['test']
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 8
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:unchecked']
+}
+
+dependencies {
+    api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+
+    testImplementation platform('org.junit:junit-bom:5.14.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.register('artifactChecksums') {
+    dependsOn tasks.named('jar')
+    def jarFile = tasks.named('jar').flatMap { it.archiveFile }
+    outputs.file(layout.buildDirectory.file("checksums/${jarFile.get().asFile.name}.sha256"))
+
+    doLast {
+        def digest = java.security.MessageDigest.getInstance('SHA-256')
+        jarFile.get().asFile.withInputStream { input ->
+            byte[] buffer = new byte[8192]
+            int read
+            while ((read = input.read(buffer)) != -1) {
+                digest.update(buffer, 0, read)
+            }
+        }
+        def hex = digest.digest().collect { String.format('%02x', it) }.join()
+        def output = layout.buildDirectory.file("checksums/${jarFile.get().asFile.name}.sha256").get().asFile
+        output.parentFile.mkdirs()
+        output.text = "${hex}  ${jarFile.get().asFile.name}${System.lineSeparator()}"
+        logger.lifecycle("Wrote ${output}")
+    }
+}
+
+tasks.register('publicApiReport') {
+    dependsOn tasks.named('jar')
+    doLast {
+        def jarPath = tasks.named('jar').flatMap { it.archiveFile }.get().asFile
+        def output = layout.buildDirectory.file('reports/public-api.txt').get().asFile
+        writePublicApiReport(jarPath, output)
+        logger.lifecycle("Wrote ${output}")
+    }
+}
+
+tasks.register('comparePublicApi') {
+    dependsOn tasks.named('publicApiReport')
+    doLast {
+        def baselinePath = providers.gradleProperty('baselineApi').orNull
+        def baselineJar = providers.gradleProperty('baselineJar').orNull
+        if (baselinePath == null && baselineJar == null) {
+            throw new GradleException('Pass -PbaselineJar=/path/to/jbmstable-parser.jar or -PbaselineApi=/path/to/baseline-public-api.txt.')
+        }
+        def baselineFile
+        if (baselineJar != null) {
+            baselineFile = layout.buildDirectory.file('reports/baseline-public-api.txt').get().asFile
+            writePublicApiReport(file(baselineJar), baselineFile)
+            logger.lifecycle("Wrote ${baselineFile}")
+        } else {
+            baselineFile = file(baselinePath)
+        }
+        def current = layout.buildDirectory.file('reports/public-api.txt').get().asFile.text.normalize()
+        def baseline = baselineFile.text.normalize()
+        if (current != baseline) {
+            throw new GradleException("Public API differs from ${baselineJar ?: baselinePath}")
+        }
+        logger.lifecycle('Public API matches baseline.')
+    }
+}
+
+void writePublicApiReport(File jarPath, File output) {
+    def jar = new java.util.jar.JarFile(jarPath)
+    def classNames = jar.entries().collect { it.name }
+            .findAll { it.startsWith('bms/table/') && it.endsWith('.class') }
+            .findAll { !it.matches('.+\\$[0-9]+\\.class') }
+            .collect { it.replace('/', '.').replace('.class', '') }
+            .sort()
+    output.parentFile.mkdirs()
+    output.text = ''
+    classNames.each { className ->
+        def process = new ProcessBuilder('javap', '-classpath', jarPath.toString(), '-public', className)
+                .redirectErrorStream(true)
+                .start()
+        def stdout = process.inputStream.getText('UTF-8')
+        def exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw new GradleException("javap failed for ${className}:${System.lineSeparator()}${stdout}")
+        }
+        output << normalizeJavapOutput(stdout) << System.lineSeparator()
+    }
+}
+
+String normalizeJavapOutput(String output) {
+    return output.readLines()
+            .findAll { !it.startsWith('Compiled from ') }
+            .join(System.lineSeparator())
+}
